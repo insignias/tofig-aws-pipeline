@@ -55,16 +55,16 @@ export class PipelineStack extends cdk.Stack {
       stageName: "Source",
       actions: [
         new GitHubSourceAction({
-          owner: "Gtofig",
-          repo: "aws-pipeline",
+          owner: "insignias",
+          repo: "tofig-aws-pipeline",
           branch: "master",
           actionName: "Pipeline_Source",
           oauthToken: SecretValue.secretsManager("github-token"),
           output: cdkSourceOutput,
         }),
         new GitHubSourceAction({
-          owner: "Gtofig",
-          repo: "express-lambda",
+          owner: "insignias",
+          repo: "tofig-express-lambda",
           branch: "master",
           actionName: "Service_Source",
           oauthToken: SecretValue.secretsManager("github-token"),
@@ -150,62 +150,62 @@ export class PipelineStack extends cdk.Stack {
     });
   }
 
-  public addBillingStackToStage(billingStack: BillingStack, stage: IStage) {
-    stage.addAction(
-      new CloudFormationCreateUpdateStackAction({
-        actionName: "Billing_Update",
-        stackName: billingStack.stackName,
-        templatePath: this.cdkBuildOutput.atPath(
-          `${billingStack.stackName}.template.json`
-        ),
-        adminPermissions: true,
-      })
-    );
-  }
+  // public addBillingStackToStage(billingStack: BillingStack, stage: IStage) {
+  //   stage.addAction(
+  //     new CloudFormationCreateUpdateStackAction({
+  //       actionName: "Billing_Update",
+  //       stackName: billingStack.stackName,
+  //       templatePath: this.cdkBuildOutput.atPath(
+  //         `${billingStack.stackName}.template.json`
+  //       ),
+  //       adminPermissions: true,
+  //     })
+  //   );
+  // }
 
-  public addServiceIntegrationTestToStage(
-    stage: IStage,
-    serviceEndpoint: string
-  ) {
-    const integTestAction = new CodeBuildAction({
-      actionName: "Integration_Tests",
-      input: this.serviceSourceOutput,
-      project: new PipelineProject(this, "ServiceIntegrationTestsProject", {
-        environment: {
-          buildImage: LinuxBuildImage.STANDARD_5_0,
-        },
-        buildSpec: BuildSpec.fromSourceFilename(
-          "build-specs/integ-test-build-spec.yml"
-        ),
-      }),
-      environmentVariables: {
-        SERVICE_ENDPOINT: {
-          value: serviceEndpoint,
-          type: BuildEnvironmentVariableType.PLAINTEXT,
-        },
-      },
-      type: CodeBuildActionType.TEST,
-      runOrder: 2,
-    });
-    stage.addAction(integTestAction);
-    integTestAction.onStateChange(
-      "IntegrationTestFailed",
-      new SnsTopic(this.pipelineNotificationsTopic, {
-        message: RuleTargetInput.fromText(
-          `Integration Test Failed. See details here: ${EventField.fromPath(
-            "$.detail.execution-result.external-execution-url"
-          )}`
-        ),
-      }),
-      {
-        ruleName: "IntegrationTestFailed",
-        eventPattern: {
-          detail: {
-            state: ["FAILED"],
-          },
-        },
-        description: "Integration test has failed",
-      }
-    );
-  }
+  // public addServiceIntegrationTestToStage(
+  //   stage: IStage,
+  //   serviceEndpoint: string
+  // ) {
+  //   const integTestAction = new CodeBuildAction({
+  //     actionName: "Integration_Tests",
+  //     input: this.serviceSourceOutput,
+  //     project: new PipelineProject(this, "ServiceIntegrationTestsProject", {
+  //       environment: {
+  //         buildImage: LinuxBuildImage.STANDARD_5_0,
+  //       },
+  //       buildSpec: BuildSpec.fromSourceFilename(
+  //         "build-specs/integ-test-build-spec.yml"
+  //       ),
+  //     }),
+  //     environmentVariables: {
+  //       SERVICE_ENDPOINT: {
+  //         value: serviceEndpoint,
+  //         type: BuildEnvironmentVariableType.PLAINTEXT,
+  //       },
+  //     },
+  //     type: CodeBuildActionType.TEST,
+  //     runOrder: 2,
+  //   });
+  //   stage.addAction(integTestAction);
+  //   integTestAction.onStateChange(
+  //     "IntegrationTestFailed",
+  //     new SnsTopic(this.pipelineNotificationsTopic, {
+  //       message: RuleTargetInput.fromText(
+  //         `Integration Test Failed. See details here: ${EventField.fromPath(
+  //           "$.detail.execution-result.external-execution-url"
+  //         )}`
+  //       ),
+  //     }),
+  //     {
+  //       ruleName: "IntegrationTestFailed",
+  //       eventPattern: {
+  //         detail: {
+  //           state: ["FAILED"],
+  //         },
+  //       },
+  //       description: "Integration test has failed",
+  //     }
+  //   );
+  // }
 }
